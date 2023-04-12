@@ -153,7 +153,7 @@ led_On_Email_Interval = dcc.Interval(
 sidebar = html.Div([
     html.H3('User Profile', style={'text-align': 'center'}),
     dbc.CardBody([
-            html.Img(src='assets/Ppic.jpg', style={'border-radius': '80px', 'width':'140px', 'height':'140px', 'object-fit': 'cover', 'display': 'block','margin-left':'auto','margin-right': 'auto'}),
+            html.Img(src='photos/Ppic.png', style={'border-radius': '80px', 'width':'140px', 'height':'140px', 'object-fit': 'cover', 'display': 'block','margin-left':'auto','margin-right': 'auto'}),
             html.H6("Username"),
             html.H4("Favorites: "),
             html.H6("Humidity"),
@@ -181,35 +181,6 @@ app.layout = dbc.Container([
                 ], style={"height": "100vh"}), # outer
             ], fluid=True) #container
 
-# @app.callback(Output('my-gauge-1', 'value'), Input('humid-update', 'n_intervals'))
-# def update_output(value):
-#     dht = DHT.DHT(DHTPin)   #create a DHT class object
-#     while(True):
-#         for i in range(0,15):            
-#             chk = dht.readDHT11()     #read DHT11 and get a return value. Then determine whether data read is normal according to the return value.
-#             if (chk is dht.DHTLIB_OK):      #read DHT11 and get a return value. Then determine whether data read is normal according to the return value.
-#                 break
-#             time.sleep(0.1)
-#         time.sleep(2)
-#         print("Humidity : %.2f \t \n"%(dht.humidity))  # for testing on the terminal
-#         return dht.humidity
-#     
-# @app.callback([Output('my-thermometer-1', 'value')], Input('temp-update', 'n_intervals'))
-# def update_output(value):
-#     dht = DHT.DHT(DHTPin)   #create a DHT class object
-#     while(True):
-#         for i in range(0,15):            
-#             chk = dht.readDHT11()     #read DHT11 and get a return value. Then determine whether data read is normal according to the return value.
-#             if (chk is dht.DHTLIB_OK):      #read DHT11 and get a return value. Then determine whether data read is normal according to the return value.
-#                 break
-#             time.sleep(0.1)
-#         time.sleep(2)
-#         temperature = dht.temperature
-#         print("Temperature : %.2f \n"%(dht.temperature))
-#         if (dht.temperature >= 24):
-#             sendEmail()
-#           
-#         return dht.temperature
 
 def sendEmail():
         port = 587  # For starttls
@@ -227,31 +198,7 @@ def sendEmail():
             server.ehlo()  # Can be omitted
             server.login(sender_email, password)
             server.sendmail(sender_email, receiver_email, message) 
-# 
-# def is_fan_on():  
-#     if GPIO.input(Motor1) and not GPIO.input(Motor2) and GPIO.input(Motor3):
-#         return True
-#     else:
-#         return False
-# 
-# @app.callback(Output('my-fan-1', 'value'), Input('fan-update', 'n_intervals'))
-# def update_output(value):
-#     fan_status_checker = is_fan_on()
-# #     print(fan_status_checker)
-#     return True if fan_status_checker else False
-#         # return True if GPIO.input(Motor1) and not GPIO.input(Motor2) and GPIO.input(Motor3) else False
-# 
-
-# @app.callback([Output('fan_status_message', 'children'), Output('my-gif', 'style')],Input('fan_status_message_update', 'n_intervals'))
-# def update_h1(n):
-#     fan_status_checker = is_fan_on()
-#     
-#     if fan_status_checker:
-#         return "Status: On", {'display':'block'}
-#     
-#     else:
-#         return "Status: Off",{'display':'none'}
-#     
+   
 #CONVERSION NOT YET DONE
 @app.callback([Output('my-thermometer-1', 'value')] ,
               [Input('temp-update', 'n_intervals'),
@@ -342,6 +289,3 @@ def update_email_status(value):
 if __name__ == '__main__':
 #     app.run_server(debug=True)
     app.run_server(debug=False,dev_tools_ui=False,dev_tools_props_check=False)
-
-
-        
