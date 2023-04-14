@@ -1,5 +1,10 @@
 from dash import Dash, html, dcc, Input, Output
 import dash_bootstrap_components as dbc
+import dash_core_components as dcc
+import dash
+import dash_html_components as html
+from dash.dependencies import Input, Output
+import dash_bootstrap_templates as dbt
 import dash_extensions as de
 import dash_daq as daq
 import RPi.GPIO as GPIO
@@ -12,17 +17,36 @@ import random
 from paho.mqtt import client as mqtt_client
 from datetime import datetime
 
-app = Dash(__name__)
-theme_change = ThemeChangerAIO(aio_id="theme", radio_props={"persistence": True}, button_props={"color": "danger","children": "Change Theme"})
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+# Set up theme toggle button and theme store
+theme_toggle_button = dbc.Button("Change Theme", id="theme-toggle", color="danger")
+theme_store = dcc.Store(id="theme-store", storage_type="local", data="default")
+
+# Set up the navbar
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(theme_change),
+        dbc.NavItem(theme_toggle_button),
     ],
-    brand="IOT SMART HOME",
-    color="dark",
+    brand="Fiacre DashBoard",
+    color="blue",
     dark=True,
     sticky="top"
 )
+
+# app = Dash(__name__)
+# theme_change = ThemeChangerAIO(aio_id="theme", radio_props={"persistence": True}, button_props={"color": "danger","children": "Change Theme"})
+# navbar = dbc.NavbarSimple(
+#     children=[
+#         dbc.NavItem(theme_change),
+#     ],
+#     brand="IOT SMART HOME",
+#     color="dark",
+#     dark=True,
+#     sticky="top"
+# )
+
+
 
 #------------PHASE03 VARIABLE CODES--------------
 broker = '192.168.1.110' #chilka home
@@ -69,8 +93,12 @@ GPIO.setup(Motor1,GPIO.IN)
 GPIO.setup(Motor2,GPIO.IN)
 GPIO.setup(Motor3,GPIO.IN)
 
-bulb_off="photos/BulbOff.jpg"
+bulb_off='photos/BulbOff.jpg'
 bulb_on="photos/BulbOn.jpg"
+
+# bulb_off = 'ph/Ppic.jpg'        
+# bulb_on = 'assets/Ppic.jpg' 
+
 url="https://assets5.lottiefiles.com/packages/lf20_UdIDHC.json"
 options = dict(loop=True, autoplay=True, rendererSettings=dict(preserveAspectRatio='xMidYMid slice'))
 
@@ -96,6 +124,18 @@ daq_Thermometer = daq.Thermometer(
                         showCurrentValue=True,
                         units="C",
                         color="red")
+
+daq_Fan = daq.Knob(
+                id='my-fan',
+                min=0,
+                value=0,
+                max=100,
+                label="Fan Speed (%)",
+                showCurrentValue=True,
+                color="blue",
+                scale={'start': 0, 'interval': 10, 'labelInterval': 2},
+                size=200)
+                        
 html_Button_Celcius_To_Fahrenheit =  html.Button('Fahrenheit', id='fahrenheit-button', n_clicks=0, style={'width':'20%'})
 
 # all fan related html
@@ -166,11 +206,13 @@ sidebar = html.Div([
 
 content = html.Div([
     dbc.Row([
-        dbc.Col(dbc.Row([daq_Gauge, daq_Thermometer, html_Div_Fan_Gif, html_Fan_Status_Message]), width=5),
+        dbc.Col(dbc.Row([daq_Gauge, daq_Thermometer,daq_Fan, html_Div_Fan_Gif, html_Fan_Status_Message]), width=5),
+        # dbc.Col(dbc.Row([daq_Fan, daq.Knob, html_Div_Fan_Gif, html_Fan_Status_Message]), width=5),
         dbc.Col(dbc.Row([daq_Led_Light_Intensity_LEDDisplay, html.Img(id="light-bulb", src=bulb_off,
                                                                       style={'width': '100px', 'height': '100px',
                                                                              'display': 'block', 'margin-left': 'auto',
                                                                              'margin-right': 'auto',
+                                                                             'color': 'blue',
                                                                              'margin-top': '10px'}),
                          html.H1(id='email_h1', style={"text-align": "center"})]), width=4,
                 className="border border-secondary"),
@@ -261,6 +303,13 @@ def update_email_status(value):
         return "Email has been sent. Lightbulb is ON", bulb_on
     else:
         return "No email has been sent. Lightbulb is OFF", bulb_off
+
+
+def update_stylesheet(modified_timestamp, theme):
+    return dbt.themes[theme]
+
+# if __name__ == "__main__":
+#     app.run_server(debug=True)
 
 if __name__ == '__main__':
     app.run_server(debug=False, dev_tools_ui=False, dev_tools_props_check=False)
