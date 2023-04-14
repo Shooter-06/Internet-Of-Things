@@ -1,17 +1,14 @@
-from dash import Dash, html, dcc, Input, Output, State
-from dash_bootstrap_templates import ThemeChangerAIO, template_from_url
+from dash import Dash, html, dcc, Input, Output
 import dash_bootstrap_components as dbc
 import dash_extensions as de
 import dash_daq as daq
 import RPi.GPIO as GPIO
-import base64
-from PIL import Image       # use and download PILLOW for it to work  https://pillow.readthedocs.io/en/stable/installation.html
+from PIL import Image
 import time
 from time import sleep
 import Freenove_DHT as DHT
-import smtplib, ssl, getpass, imaplib, email
+import smtplib, ssl
 import random
-import dash_draggable
 from paho.mqtt import client as mqtt_client
 from datetime import datetime
 
@@ -28,30 +25,36 @@ navbar = dbc.NavbarSimple(
 )
 
 #------------PHASE03 VARIABLE CODES--------------
-# broker = '192.168.0.158' #ip in Lab class
-# broker = '192.168.76.10'
 broker = '192.168.1.110' #chilka home
 port = 1883
 topic1 = "esp/lightintensity"
 topic2 = "esp/lightswitch"
-# generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 100)}'
-# username = 'emqx'
-# password = 'public'
 esp_message = 0
 esp_lightswitch_message = "OFF"
 GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 LedPin = 35 # Led Pin/Enable Pin
 GPIO.setup(LedPin,GPIO.OUT)
-email_counter = 0    # just checks if email has been sent at some stage
+email_counter = 0
 # -----------------------------------------------
+# MQTT settings
+broker = 'mqtt.eclipseprojects.io'
+port = 1883
+topic1 = "lightintensity"
+topic2 = "lightswitch"
+client_id = "python-mqtt-dashboard"
 
+# Global variables
+esp_message = 0
+esp_lightswitch_message = ""
+email_counter = 0
 #------------PHASE02 VARIABLE CODES--------------
-EMAIL = 'iotdashboard2022@outlook.com'
-PASSWORD = 'iotpassword123'
+EMAIL = 'john190curry@gmail.com'
+PASSWORD = 'CUURY23JOHN45'
 
-SERVER = 'outlook.office365.com'
+SERVER= "smtp.gmail.com"
+
 temperature = 0
 DHTPin = 40 # equivalent to GPIO21
 fan_status_checker=False
@@ -66,15 +69,14 @@ GPIO.setup(Motor1,GPIO.IN)
 GPIO.setup(Motor2,GPIO.IN)
 GPIO.setup(Motor3,GPIO.IN)
 
-light_bulb_off="https://media.geeksforgeeks.org/wp-content/uploads/OFFbulb.jpg"
-light_bulb_on="https://media.geeksforgeeks.org/wp-content/uploads/ONbulb.jpg"
+bulb_off="photos/BulbOff.jpg"
+bulb_on="photos/BulbOn.jpg"
 url="https://assets5.lottiefiles.com/packages/lf20_UdIDHC.json"
 options = dict(loop=True, autoplay=True, rendererSettings=dict(preserveAspectRatio='xMidYMid slice'))
 
 # -----------------------------------------------
 #Components
 
-# related to gauge
 daq_Gauge = daq.Gauge(
                 id='my-gauge-1',
                 label="Humidity",
@@ -84,7 +86,6 @@ daq_Gauge = daq.Gauge(
                 max=100,
                 min=0)
 
-# related to temperature
 daq_Thermometer = daq.Thermometer(
                         id='my-thermometer-1',
                         min=-40,
@@ -101,7 +102,6 @@ html_Button_Celcius_To_Fahrenheit =  html.Button('Fahrenheit', id='fahrenheit-bu
 html_Fan_Label = html.H6('Fan',style={'text-align':'center'})
 html_Div_Fan_Gif = html.Div([de.Lottie(options=options, width="25%", height="25%", url=url)], id='my-gif', style={'display':'none'})
 html_Fan_Status_Message = html.H1(id='fan_status_message',style={'text-align':'center'})
-
 
 # all related to light intensity and led
 html_Light_Intensity_Label =  html.H1('LightIntensity',style={'text-align':'center'})
@@ -150,63 +150,77 @@ led_On_Email_Interval = dcc.Interval(
             n_intervals = 0)
 
 
+# Layout
 sidebar = html.Div([
     html.H3('User Profile', style={'text-align': 'center'}),
     dbc.CardBody([
-            html.Img(src='photos/Ppic.png', style={'border-radius': '80px', 'width':'140px', 'height':'140px', 'object-fit': 'cover', 'display': 'block','margin-left':'auto','margin-right': 'auto'}),
-            html.H6("Username"),
-            html.H4("Favorites: "),
-            html.H6("Humidity"),
-            html.H6("Temperature"),
-            html.H6("Light Intensity")])
-    ])
+        html.Img(src='photos/Ppic.jpg', style={'border-radius': '80px', 'width': '140px', 'height': '140px',
+                                               'object-fit': 'cover', 'display': 'block', 'margin-left': 'auto',
+                                               'margin-right': 'auto'}),
+        html.H6("Username"),
+        html.H4("Favorites: "),
+        html.H6("Humidity"),
+        html.H6("Temperature"),
+        html.H6("Light Intensity")])
+])
 
 content = html.Div([
-           dbc.Row([
-#               dbc.Col(dbc.Row([daq_Gauge, daq_Thermometer, html_Button_Celcius_To_Fahrenheit,html_Fan_Label, html_Div_Fan_Gif, html_Fan_Status_Message]), width=7),
-                dbc.Col(dbc.Row([daq_Gauge, daq_Thermometer,html_Div_Fan_Gif, html_Fan_Status_Message]), width=5),
-        #                             dbc.Col(dbc.Row([html_Light_Intensity_Label, html_Led_Status_Message])),
-                dbc.Col(dbc.Row([daq_Led_Light_Intensity_LEDDisplay, html.Img(id="light-bulb", src=light_bulb_off,
-                    style={'width':'100px', 'height':'100px', 'display': 'block','margin-left':'auto','margin-right': 'auto', 'margin-top':'10px'}),
-                    html.H1(id='email_h1',style ={"text-align":"center"})]), width=4, className="border border-secondary"),
-                fan_Status_Message_Interval, humidity_Interval, temperature_Interval, light_Intensity_Interval, led_On_Email_Interval
-             ]), #inner Row
-        ])
+    dbc.Row([
+        dbc.Col(dbc.Row([daq_Gauge, daq_Thermometer, html_Div_Fan_Gif, html_Fan_Status_Message]), width=5),
+        dbc.Col(dbc.Row([daq_Led_Light_Intensity_LEDDisplay, html.Img(id="light-bulb", src=bulb_off,
+                                                                      style={'width': '100px', 'height': '100px',
+                                                                             'display': 'block', 'margin-left': 'auto',
+                                                                             'margin-right': 'auto',
+                                                                             'margin-top': '10px'}),
+                         html.H1(id='email_h1', style={"text-align": "center"})]), width=4,
+                className="border border-secondary"),
+        fan_Status_Message_Interval, humidity_Interval, temperature_Interval, light_Intensity_Interval,
+        led_On_Email_Interval
+    ]),
+])
 
 app.layout = dbc.Container([
-                dbc.Row(navbar),
-                dbc.Row([
-                    dbc.Col(sidebar, width=2), 
-                    dbc.Col(content, width=10, className="bg-secondary") # content col
-                ], style={"height": "100vh"}), # outer
-            ], fluid=True) #container
+    dbc.Row(navbar),
+    dbc.Row([
+        dbc.Col(sidebar, width=2),
+        dbc.Col(content, width=10, className="bg-secondary")
+    ], style={"height": "100vh"}),
+], fluid=True)
 
+# Callbacks
+@app.callback(Output('light-intensity', 'value'), Input('light-intensity-update', 'n_intervals'))
+def update_output(value):
+    run()
+    return esp_message
 
-def sendEmail():
-        port = 587  # For starttls
-        smtp_server = "smtp-mail.outlook.com"
-        sender_email = "iotdashboard2022@outlook.com"
-        receiver_email = "iotdashboard2022@outlook.com"
-        password = 'iotpassword123'
-        subject = "Subject: FAN CONTROL" 
-        body = "Your home temperature is greater than 24. Do you wish to turn on the fan. Reply YES if so."
-        message = subject + '\n\n' + body
-        context = ssl.create_default_context()
-        with smtplib.SMTP(smtp_server, port) as server:
-            server.ehlo()  # Can be omitted
-            server.starttls(context=context)
-            server.ehlo()  # Can be omitted
-            server.login(sender_email, password)
-            server.sendmail(sender_email, receiver_email, message) 
-   
-#CONVERSION NOT YET DONE
-@app.callback([Output('my-thermometer-1', 'value')] ,
-              [Input('temp-update', 'n_intervals'),
-              Input('fahrenheit-button', 'n_clicks')])
-def changeToFahrenheit(n_intervals, n_clicks): 
-    return (temperature * 1.8) + 32
+@app.callback([Output('email_h1', 'children'), Output('light-bulb', 'src')],
+              Input('led-email-status-update', 'n_intervals'))
+def update_email_status(value):
+    send_led_email_check(esp_lightswitch_message)
+    if email_counter > 0:
+        return "Email has been sent. Lightbulb is ON", bulb_on
+    else:
+        return "No email has been sent. Lightbulb is OFF", bulb_off
 
-# PHASE 03 CODE FOR SUBSCRIBE 
+def connect_mqtt() -> mqtt_client:
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+            time.sleep(5)
+        else:
+            print("Failed to connect, return code %d\n", rc)
+    client = mqtt_client.Client(client_id)
+    client.on_connect = on_connect
+    client.connect(broker, port)
+    return client
+
+def on_message(client, userdata, message):
+    global esp_message, esp_lightswitch_message
+    if message.topic == topic1:
+        esp_message = int(float(message.payload.decode()))
+    elif message.topic == topic2:
+        esp_lightswitch_message = message.payload.decode()
+
 def sendLedStatusEmail():
          print("PASSED BY SENDLEDSTATUSEMAIL method")
          port = 587  # For starttls
@@ -227,65 +241,26 @@ def sendLedStatusEmail():
              server.login(sender_email, password)
              server.sendmail(sender_email, receiver_email, message)
         
-            
-@app.callback(Output('light-intensity', 'value'), Input('light-intensity-update', 'n_intervals'))  
-def update_output(value):
-    run()
-    # print("Here: ", esp_message) UNCOMMENT TO SEE THE VALUE PASSED FROM THE PUBLISHER 
-    value = esp_message
-    return value
-
-def connect_mqtt() -> mqtt_client:
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-            time.sleep(5)
-        else:
-            print("Failed to connect, return code %d\n", rc)
-    client = mqtt_client.Client(client_id)
-    client.on_connect = on_connect
-    client.connect(broker, port)
-    return client
-
-def on_message_from_lightintensity(client, userdata, message):
-   global esp_message
-   esp_message = int(float(message.payload.decode()))
-   print("Message Received from LightSwtch: ")
-   print(esp_message)
-
-def on_message_from_lightswitch(client, userdata, message):
-   global esp_lightswitch_message
-   esp_lightswitch_message = message.payload.decode()
-   print("Message Received from lightswitch: ")
-   print(esp_lightswitch_message)
-
-def on_message(client, userdata, message):
-   print("Message Received from Others: "+message.payload.decode())
-
 def run():
     client = connect_mqtt()
     client.subscribe(topic1, qos=1)
     client.subscribe(topic2, qos=1)
-    client.message_callback_add(topic1, on_message_from_lightintensity)
-    client.message_callback_add(topic2, on_message_from_lightswitch)
+    client.on_message = on_message
     client.loop_start()
 
-def send_led_email_check(value):         # send email and increase the email counter to know there is an email sent
-      global email_counter
-      if value.__eq__("ON") and email_counter == 0:
-         sendLedStatusEmail()
-         email_counter += 1
+def send_led_email_check(value):
+    global email_counter
+    if value == "ON" and email_counter == 0:
+        sendLedStatusEmail()
+        email_counter += 1
 
-#printing
-@app.callback([Output('email_h1', 'children'), Output('light-bulb', 'src')], Input('led-email-status-update', 'n_intervals'))       # update email sent message
+@app.callback([Output('email_h1', 'children'), Output('light-bulb', 'src')], Input('led-email-status-update', 'n_intervals'))
 def update_email_status(value):
     send_led_email_check(esp_lightswitch_message)
-    print(email_counter + str(email_counter))
     if email_counter > 0:
-        return "Email has been sent. Lightbulb is ON", light_bulb_on
+        return "Email has been sent. Lightbulb is ON", bulb_on
     else:
-        return "No email has been sent. Lightbulb is OFF", light_bulb_off
+        return "No email has been sent. Lightbulb is OFF", bulb_off
 
 if __name__ == '__main__':
-#     app.run_server(debug=True)
-    app.run_server(debug=False,dev_tools_ui=False,dev_tools_props_check=False)
+    app.run_server(debug=False, dev_tools_ui=False, dev_tools_props_check=False)
