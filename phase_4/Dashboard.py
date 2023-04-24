@@ -507,7 +507,7 @@ def run():
     client.message_callback_add(topic1, on_message)
     client.message_callback_add(topic2, on_message_from_rfid)
     client.loop_start()
-
+    
 # Checks if the light intensity value is lower than the user's desired threshold and send email and increase the email counter to know there is an email sent
 def send_led_email_check(lightvalue):
     global email_counter
