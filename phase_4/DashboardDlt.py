@@ -13,7 +13,6 @@ import RPi.GPIO as GPIO
 from PIL import Image
 from dash import Dash, html, Input, Output
 import dash_bootstrap_components as dbc
-
 # import dash_core_components as dcc
 from dash import dcc
 # import dash_html_components as html
@@ -171,7 +170,8 @@ fan_Interval_Status = dcc.Interval(
             disabled=False,
             interval=5*1000, # 10 seconds
             fanStatus_intervals=0)
-            # max_intervals=-1, # -1 goes on forever no max          
+            # max_intervals=-1, # -1 goes on forever no max
+            
 fan_Interval = dcc.Interval(
             id = 'fan_Update',
             disabled=False,
@@ -183,28 +183,33 @@ humidity_Interval = dcc.Interval(
             disabled=False,
             interval = 1*3000,  #lower than 3000 for humidity wouldn't show the humidity on the terminal
             humidity_interv = 0)
+
 temperature_Interval =  dcc.Interval(
             id = 'temperature',
             disabled=False,
             interval = 1*8000,   #lower than 5000 for temperature wouldn't show the temp on the terminal #1800000 equivalent to 30 mins
             temp_intervals = 0)
+
 light_Intensity_Interval =  dcc.Interval(
             id = 'light_Intensity',
             disabled=False,
             interval = 1*1000,   
             Light_intervals = 0)
+
 # led email sender intrevals 
 led_Email_Interval = dcc.Interval(
             id = 'led_Email',
             disabled=False,
             interval = 1*2000,   
             led_intervals = 0)
+
 # user intervals 
 user_info = dcc.Interval(
             id = 'user_info',
             disabled=False,
             interval = 1*2000,   
             user_intervals = 0)
+
 # Layout
 sidebar = html.Div([
     html.H3('User Profile', style={'text-align': 'center'}),
@@ -287,7 +292,24 @@ content = html.Div([
             ]),
         ])
 
+# content = html.Div([
+#     dbc.Row([
+#         dbc.Col(dbc.Row([html_Div_Fan_Gif, html_Fan_Status_Message]), width=5),
+#         dbc.Col(dbc.Row([daq_light_display, light_intensity_slider, html.Img(id="light-bulb", src=bulb_off,
+#                                                                       style={'width': '100px', 'height': '100px',
+#                                                                              'display': 'block', 'margin-left': 'auto',
+#                                                                              'margin-right': 'auto',
+#                                                                              'margin-top': '10px'}),
+#                          
+# le={"text-align": "center"})]), width=4,
+#                 className="border border-secondary"),
+#         fan_Interval_Status, humidity_Interval, temperature_Interval, light_Intensity_Interval,
+#         led_On_Email_Interval
+#     ]),
+# ])
+
 # ''' the Dashboard Layout '''
+
 app.layout = html.Div(style={'backgroundColor': 'palegreen'}, children=[
     dbc.Container([
         dbc.Row(navbar),
@@ -379,6 +401,11 @@ def update_h1(n):
     else:
         print("The pump is off.")
 
+# if set_on():
+#     print("The pump is on.")
+# else:
+#     print("The pump is off.")
+
 # update the dashboard 
 @app.callback([Output('username_data', 'children'),
                Output('humidity_data', 'children'),
@@ -441,12 +468,40 @@ def on_message(client, userdata, message):
         light_intensity_state = message.payload.decode()
         print(light_intensity_state)
 
+
 # Database code caller
 def get_from_database(rfid):
+    
+    # #Connect to the database
+    # connection = pymysql.connect(host='localhost',
+    #                          user='root',
+    #                          password='root',
+    #                          database='IOT',
+    #                          charset='utf8mb4',
+    #                          cursorclass=pymysql.cursors.DictCursor)
+    # with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+    # # Read a single record
+    #     sql = "SELECT * FROM USER WHERE id = %s"
+    #     # To execute the SQL query
+    #     cursor.execute(sql, (rfid))
+    #     user_info = cursor.fetchone()
+    # print("Result from database select: ")
+    
+    # print(user_info)
+
+    # Connect to the SQLite database
     conn = sqlite3.connect('example.db')
+    
+    # Create a cursor object to execute SQL queries
     cursor = conn.cursor()
+    
+    # Execute a SQL query to retrieve user information based on the provided RFID tag ID
     cursor.execute('SELECT * FROM users WHERE rfid = ?', (rfid,))
+    
+    # Retrieve the first row of the query result
     user_info = cursor.fetchone()
+    
+    # Close the database connection
     conn.close()
 
     if user_info:
@@ -471,6 +526,32 @@ def get_from_database(rfid):
         print('No user found with RFID tag ID:', rfid)
         
     print(str(user_id) + " " + str(temp_threshold) + " " + str(light_threshold) + " " + path_to_picture)
+
+# for rfid
+# # Function to send email notification
+# def send_email_notification(username, time):
+#     message = MIMEMultipart("alternative")
+#     message["Subject"] = f"User {username} entered at {time}"
+#     message["From"] = EMAIL
+#     message["To"] = EMAIL
+
+#     # Create the plain-text and HTML version of your message
+#     text = f"User {username} entered at {time}"
+#     html = f"<html><body><p>User <strong>{username}</strong> entered at {time}</p></body></html>"
+
+#     # Turn these into plain/html MIMEText objects
+#     part1 = MIMEText(text, "plain")
+#     part2 = MIMEText(html, "html")
+
+#     # Add HTML/plain-text parts to MIMEMultipart message
+#     message.attach(part1)
+#     message.attach(part2)
+
+#     # Send the message
+#     context = ssl.create_default_context()
+#     with smtplib.SMTP_SSL(SERVER, 465, context=context) as server:
+#         server.login(EMAIL, PASSWORD)
+#         server.sendmail(EMAIL, EMAIL, message.as_string())
 
 def sendEmailRfid(name):
         port = 587  # For starttls
@@ -508,6 +589,7 @@ def run():
     client.message_callback_add(topic2, on_message_from_rfid)
     client.loop_start()
 
+
 # Checks if the light intensity value is lower than the user's desired threshold and send email and increase the email counter to know there is an email sent
 def send_led_email_check(lightvalue):
     global email_counter
@@ -515,6 +597,11 @@ def send_led_email_check(lightvalue):
         print("passed here in send_led_email_check")
         sendEmailLed()
         email_counter += 1
+# def send_led_email_check(value):
+#     global led_email_sent_count
+#     if value == "ON" and led_email_sent_count == 0:
+#         sendEmailLed()
+#         led_email_sent_count += 1        
 
 #Callback to change the lightbulb image & lightbulb status and update email sent message
 @app.callback([Output('email_heading', 'children'), Output('light-bulb', 'src')], Input('led-email-status-update', 'n_intervals'))      
@@ -531,6 +618,15 @@ def update_email_status(value):
     else:
         GPIO.output(LedPin, GPIO.LOW)
         return "No email has been sent. Lightbulb is OFF", bulb_off
+
+# @app.callback([Output('email_h1', 'children'), Output('light-bulb', 'src')],
+#               Input('led-email-status-update', 'n_intervals'))
+# def update_email_status(value):
+#     send_led_email_check(light_intensity_state)
+#     if led_email_sent_count > 0:
+#         return "Email has been sent. Lightbulb is ON", bulb_on
+#     else:
+#         return "No email has been sent. Lightbulb is OFF", bulb_off
 
 def update_stylesheet(modified_timestamp, theme):
     return dbt.themes[theme]

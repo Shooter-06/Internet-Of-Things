@@ -2,8 +2,10 @@
 #include <PubSubClient.h>
 
 // Replace with your Wi-Fi credentials
-const char* ssid = "BELL555";
-const char* password = "9F4D6E42EA7F";
+// const char* ssid = "BELL555";
+// const char* password = "9F4D6E42EA7F";
+const char* ssid = "kfwifi";
+const char* password = "Uwingabiye45:05:07";
 
 // Replace with your MQTT server IP address
 const char* mqtt_server = "192.168.2.67";
