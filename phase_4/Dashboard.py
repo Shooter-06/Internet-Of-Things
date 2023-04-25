@@ -29,8 +29,8 @@ import pymysql
 import pymysql.cursors
 import sqlite3
 
-# Import additional necessary libraries
-import MFRC522
+# # Import additional necessary libraries
+# import MFRC522
 import json
 import paho.mqtt.publish as publish
 from email.mime.text import MIMEText
