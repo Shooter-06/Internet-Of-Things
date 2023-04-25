@@ -79,9 +79,9 @@ GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 
 # Set up the GPIO pins
-m1 = 17
-m2 = 27
-m3 = 22
+m1 = 35
+m2 = 37
+m3 = 33
 
 GPIO.setup(m1,GPIO.IN)
 GPIO.setup(m2,GPIO.IN)
@@ -149,46 +149,51 @@ daq_light_display = daq.Knob(
                         value = 10, size=64)
 html_Led_Status_Message = html.H1(id='light_h1',style={'text-align':'center'})  #not used yet
 # intervals
+
 # # the fan status interval for each Messag
 fan_Interval_Status = dcc.Interval(
             id='fan_status_message',
             disabled=False,
-            interval=5*1000, # 10 seconds
-            fanStatus_intervals=0)
-            # max_intervals=-1, # -1 goes on forever no max          
+            interval=5*1000,
+            n_intervals=0)
+
 fan_Interval = dcc.Interval(
             id = 'fan_Update',
             disabled=False,
             interval = 1*8000,  
-            fan_intervals = 0)
+            n_intervals = 0)
             
 humidity_Interval = dcc.Interval(
             id = 'humidity',
             disabled=False,
             interval = 1*3000,  #lower than 3000 for humidity wouldn't show the humidity on the terminal
-            humidity_interv = 0)
+            n_intervals = 0)
+
 temperature_Interval =  dcc.Interval(
             id = 'temperature',
             disabled=False,
             interval = 1*8000,   #lower than 5000 for temperature wouldn't show the temp on the terminal #1800000 equivalent to 30 mins
-            temp_intervals = 0)
+            n_intervals = 0)
+
 light_Intensity_Interval =  dcc.Interval(
             id = 'light_Intensity',
             disabled=False,
             interval = 1*1000,   
-            Light_intervals = 0)
+            n_intervals = 0)
+
 # led email sender intrevals 
 led_Email_Interval = dcc.Interval(
             id = 'led_Email',
             disabled=False,
             interval = 1*2000,   
-            led_intervals = 0)
+            n_intervals = 0)
+
 # user intervals 
 user_info = dcc.Interval(
             id = 'user_info',
             disabled=False,
             interval = 1*2000,   
-            user_intervals = 0)
+            n_intervals = 0)
 # Layout
 sidebar = html.Div([
     html.H3('User Profile', style={'text-align': 'center'}),
@@ -282,7 +287,7 @@ app.layout = html.Div(style={'backgroundColor': 'palegreen'}, children=[
     ], fluid=True)
 ])
 # Callback for the temperature
-@app.callback(Output('my-gauge', 'value'), Input('humidity', 'humidity_interv'))
+@app.callback(Output('my-gauge', 'value'), Input('humidity', 'n_intervals'))
 def update_temperature(value):
     dht = DHT.DHT(DHTPin)
     while(True):
@@ -304,7 +309,7 @@ def update_temperature(value):
      Output('thermometer', 'units')],
     [Input('fahrenheit-switch', 'value'),
      Input('thermometer', 'value'),
-     Input('temperature', 'temp_intervals')])
+     Input('temperature', 'n_intervals')])
 
 def update_output(switch_state, temp_value, interval_value):
     dht = DHT.DHT(DHTPin)
@@ -354,7 +359,7 @@ def set_on():
 
 # Callback for the Fan Lottie gif and status message
 @app.callback([Output('fan_message', 'children'), Output('lottie-gif', 'isStopped')],
-              Input('fan_status_message', 'fanStatus_intervals'))
+              Input('fan_status_message', 'n_intervals'))
 def update_h1(n):
     checker_on = set_on()
     
@@ -369,13 +374,13 @@ def update_h1(n):
                Output('temperature_data', 'children'),
                Output('lightintensity_data', 'children'),
                Output('picture', 'src')],
-               Input('user_info', 'user_intervals'))
+               Input('user_info', 'n_intervals'))
 
 def user_Info_Update(n):
     return "Username: " + str(id) ,"Humidity: 30" ,"Temperature: " +  str(temp_threshold), "Light Intensity: " + str(light_threshold), profile
 
 @app.callback(Output('my-light-intensity-slider', 'value'),
-              Input('light_Intensity', 'Light_intervals'))
+              Input('light_Intensity', 'n_intervals'))
 def update_output(value):
     global light_intensity_value
     if light_intensity_value < 400:
@@ -516,8 +521,8 @@ def update_email_status(value):
         GPIO.output(LedPin, GPIO.LOW)
         return "No email has been sent. Lightbulb is OFF", bulb_off
 
-def update_stylesheet(modified_timestamp, theme):
-    return dbt.themes[theme]
+# def update_stylesheet(modified_timestamp, theme):
+#     return dbt.themes[theme]
 
 if __name__ == '__main__':
     run()
