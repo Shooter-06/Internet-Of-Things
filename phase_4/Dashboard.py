@@ -1,42 +1,26 @@
-# Standard library imports
 import random
 import smtplib
-import ssl
+import time
+from time import sleep
+import Freenove_DHT as DHT
+import smtplib, ssl, getpass, imaplib, email
+import random
+from paho.mqtt import client as mqtt_client
 import datetime
 from datetime import datetime
-import time 
-from time import sleep
-
-# Third-party imports
-import dash
 import RPi.GPIO as GPIO
-from PIL import Image
-from dash import Dash, html, Input, Output
+from dash import Dash, html, dcc, Input, Output, State
+from dash_bootstrap_templates import ThemeChangerAIO, template_from_url
 import dash_bootstrap_components as dbc
-
-# import dash_core_components as dcc
-from dash import dcc
-# import dash_html_components as html
-from dash import html
-import os
-from dash.dependencies import Input, Output
-import dash_bootstrap_templates as dbt
 import dash_extensions as de
 import dash_daq as daq
-from paho.mqtt import client as mqtt_client
-import Freenove_DHT as DHT
 import pymysql
 import pymysql.cursors
+import os
 import sqlite3
 
-# # Import additional necessary libraries
-# import MFRC522
-import json
-import paho.mqtt.publish as publish
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Set up theme toggle button and theme store
 theme_toggle_button = dbc.Button("Change Theme", id="theme-toggle", color="danger")
