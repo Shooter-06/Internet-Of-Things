@@ -36,8 +36,8 @@ navbar = dbc.NavbarSimple(
     dark=True,
     sticky="top"
 )
+
 #phase 4 -- RFID Setup
-reader = MFRC522.MFRC522()
 user_profiles = {} # Store user profiles
 user_data = {} # Store user data
 
@@ -454,7 +454,7 @@ def get_from_database(rfid):
     else:
         print('No user found with RFID tag ID:', rfid)
         
-    print(str(user_id) + " " + str(temp_threshold) + " " + str(light_threshold) + " " + path_to_picture)
+    print(str(user_id) + " " + str(temp_threshold) + " " + str(light_threshold) + " " + picture)
 
 def sendEmailRfid(name):
         port = 587  # For starttls
